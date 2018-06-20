@@ -15,4 +15,10 @@ go:
   output-folder: .  
   add-credentials: true
   namespace: beacon
+
+directive:
+  from: swagger-document # do it globally (in case there are multiple input OpenAPI definitions)
+  where: $.paths..pattern
+  transform: return ".*"
+  reason: Client side regex pattern interpretation is buggy.
 ```

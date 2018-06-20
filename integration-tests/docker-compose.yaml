@@ -1,0 +1,41 @@
+version: '2'
+volumes:
+    mongodata:
+
+services:
+    db1:
+        image: mongo:3.4
+        volumes: 
+            - mongodata:/data/db
+        ports:
+            - "27017:27017"
+    auth:
+        image: docker.naveego.com:4333/mock-auth
+        environment:
+            AUTH_BASE_URL: "http://auth:3000"
+    live:
+        image: docker.naveego.com:4333/mock-live
+        links: 
+            - auth
+        ports:
+            - 9002:9002
+        environment:
+            NAVEEGO_LIVE_MOCK: "true"
+            DEBUG: "*"
+    nats:
+        image: nats:1.1.0-linux
+        ports:
+            - "4222:4222"
+            - "8222:8222"
+            - "6222:6222"
+    beacon:
+        image: docker.naveego.com:4333/beacon:rc-3.13.build-17
+        ports:
+            - "9005:9005"
+        links: 
+            - db1
+            - auth
+        environment:
+          PORT: 9005 
+          MONGO_DSN: mongodb://db1:27017/beacon
+        

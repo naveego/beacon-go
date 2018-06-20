@@ -38,6 +38,74 @@ func NewWithBaseURI(baseURI string) BaseClient {
 	}
 }
 
+// CreateExpectation sends the create expectation request.
+func (client BaseClient) CreateExpectation(ctx context.Context, body *ExpectationInputs) (result Expectation, err error) {
+	if err := validation.Validate([]validation.Validation{
+		{TargetValue: body,
+			Constraints: []validation.Constraint{{Target: "body", Name: validation.Null, Rule: false,
+				Chain: []validation.Constraint{{Target: "body.Name", Name: validation.Null, Rule: true, Chain: nil},
+					{Target: "body.DisplayName", Name: validation.Null, Rule: true, Chain: nil},
+					{Target: "body.Tenant", Name: validation.Null, Rule: true, Chain: nil},
+					{Target: "body.System", Name: validation.Null, Rule: true, Chain: nil},
+				}}}}}); err != nil {
+		return result, validation.NewError("beacon.BaseClient", "CreateExpectation", err.Error())
+	}
+
+	req, err := client.CreateExpectationPreparer(ctx, body)
+	if err != nil {
+		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "CreateExpectation", nil, "Failure preparing request")
+		return
+	}
+
+	resp, err := client.CreateExpectationSender(req)
+	if err != nil {
+		result.Response = autorest.Response{Response: resp}
+		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "CreateExpectation", resp, "Failure sending request")
+		return
+	}
+
+	result, err = client.CreateExpectationResponder(resp)
+	if err != nil {
+		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "CreateExpectation", resp, "Failure responding to request")
+	}
+
+	return
+}
+
+// CreateExpectationPreparer prepares the CreateExpectation request.
+func (client BaseClient) CreateExpectationPreparer(ctx context.Context, body *ExpectationInputs) (*http.Request, error) {
+	preparer := autorest.CreatePreparer(
+		autorest.AsContentType("application/json; charset=utf-8"),
+		autorest.AsPost(),
+		autorest.WithBaseURL(client.BaseURI),
+		autorest.WithPath("/api/expectations"))
+	if body != nil {
+		preparer = autorest.DecoratePreparer(preparer,
+			autorest.WithJSON(body))
+	}
+	return preparer.Prepare((&http.Request{}).WithContext(ctx))
+}
+
+// CreateExpectationSender sends the CreateExpectation request. The method will close the
+// http.Response Body if it receives an error.
+func (client BaseClient) CreateExpectationSender(req *http.Request) (*http.Response, error) {
+	return autorest.SendWithSender(client, req,
+		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+}
+
+// CreateExpectationResponder handles the response to the CreateExpectation request. The method always
+// closes the http.Response Body.
+func (client BaseClient) CreateExpectationResponder(resp *http.Response) (result Expectation, err error) {
+	err = autorest.Respond(
+		resp,
+		client.ByInspecting(),
+		azure.WithErrorUnlessStatusCode(http.StatusOK),
+		autorest.ByUnmarshallingJSON(&result),
+		autorest.ByClosing())
+	result.Response = autorest.Response{Response: resp}
+	return
+}
+
 // CreateFeature sends the create feature request.
 func (client BaseClient) CreateFeature(ctx context.Context, body *Feature) (result Feature, err error) {
 	if err := validation.Validate([]validation.Validation{
@@ -46,6 +114,8 @@ func (client BaseClient) CreateFeature(ctx context.Context, body *Feature) (resu
 				Chain: []validation.Constraint{{Target: "body.Name", Name: validation.Null, Rule: true, Chain: nil},
 					{Target: "body.Version", Name: validation.Null, Rule: true,
 						Chain: []validation.Constraint{{Target: "body.Version", Name: validation.Pattern, Rule: `^v?((\d+)\.(\d+)\.(\d+))(?:-([\dA-Za-z\-]+(?:\.[\dA-Za-z\-]+)*))?(?:\+([\dA-Za-z\-]+(?:\.[\dA-Za-z\-]+)*))?$`, Chain: nil}}},
+					{Target: "body.Path", Name: validation.Null, Rule: false,
+						Chain: []validation.Constraint{{Target: "body.Path", Name: validation.Pattern, Rule: `^nrn:beacon:(?<tenant>[^:]+:(?<type>sys|exp|ftr|fin):(?<feature>[^:]+)?:(?<version>[^:]+)?:(?<instance>[^:]*)?:(?<system>[^:]*)?:(?<name>[^:]*)?)$`, Chain: nil}}},
 				}}}}}); err != nil {
 		return result, validation.NewError("beacon.BaseClient", "CreateFeature", err.Error())
 	}
@@ -175,41 +245,107 @@ func (client BaseClient) CreateFeatureInstanceResponder(resp *http.Response) (re
 	return
 }
 
-// DeleteAPIExpectationsPath sends the delete api expectations path request.
-// Parameters:
-// pathParameter - NRN resource path for a beacon resource. The "name" position may be redundent for the
-// feature (ftr) and feature instance (fin) types. The "system" position is the dot-delimited hierarchy of
-// system names above this resource, if the resource is contained within a system.
-func (client BaseClient) DeleteAPIExpectationsPath(ctx context.Context, pathParameter string) (result String, err error) {
+// CreateSystem sends the create system request.
+func (client BaseClient) CreateSystem(ctx context.Context, body *SystemInputs) (result System, err error) {
 	if err := validation.Validate([]validation.Validation{
-		{TargetValue: pathParameter,
-			Constraints: []validation.Constraint{{Target: "pathParameter", Name: validation.Pattern, Rule: `^nrn:beacon:(?<tenant>[^:]+:(?<type>sys|exp|ftr|fin):(?<feature>[^:]+)?:(?<version>[^:]+)?:(?<instance>[^:]*)?:(?<system>[^:]*)?:(?<name>[^:]*)?)$`, Chain: nil}}}}); err != nil {
-		return result, validation.NewError("beacon.BaseClient", "DeleteAPIExpectationsPath", err.Error())
+		{TargetValue: body,
+			Constraints: []validation.Constraint{{Target: "body", Name: validation.Null, Rule: false,
+				Chain: []validation.Constraint{{Target: "body.Name", Name: validation.Null, Rule: true, Chain: nil},
+					{Target: "body.Tenant", Name: validation.Null, Rule: true, Chain: nil},
+				}}}}}); err != nil {
+		return result, validation.NewError("beacon.BaseClient", "CreateSystem", err.Error())
 	}
 
-	req, err := client.DeleteAPIExpectationsPathPreparer(ctx, pathParameter)
+	req, err := client.CreateSystemPreparer(ctx, body)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "DeleteAPIExpectationsPath", nil, "Failure preparing request")
+		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "CreateSystem", nil, "Failure preparing request")
 		return
 	}
 
-	resp, err := client.DeleteAPIExpectationsPathSender(req)
+	resp, err := client.CreateSystemSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "DeleteAPIExpectationsPath", resp, "Failure sending request")
+		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "CreateSystem", resp, "Failure sending request")
 		return
 	}
 
-	result, err = client.DeleteAPIExpectationsPathResponder(resp)
+	result, err = client.CreateSystemResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "DeleteAPIExpectationsPath", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "CreateSystem", resp, "Failure responding to request")
 	}
 
 	return
 }
 
-// DeleteAPIExpectationsPathPreparer prepares the DeleteAPIExpectationsPath request.
-func (client BaseClient) DeleteAPIExpectationsPathPreparer(ctx context.Context, pathParameter string) (*http.Request, error) {
+// CreateSystemPreparer prepares the CreateSystem request.
+func (client BaseClient) CreateSystemPreparer(ctx context.Context, body *SystemInputs) (*http.Request, error) {
+	preparer := autorest.CreatePreparer(
+		autorest.AsContentType("application/json; charset=utf-8"),
+		autorest.AsPost(),
+		autorest.WithBaseURL(client.BaseURI),
+		autorest.WithPath("/api/systems"))
+	if body != nil {
+		preparer = autorest.DecoratePreparer(preparer,
+			autorest.WithJSON(body))
+	}
+	return preparer.Prepare((&http.Request{}).WithContext(ctx))
+}
+
+// CreateSystemSender sends the CreateSystem request. The method will close the
+// http.Response Body if it receives an error.
+func (client BaseClient) CreateSystemSender(req *http.Request) (*http.Response, error) {
+	return autorest.SendWithSender(client, req,
+		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+}
+
+// CreateSystemResponder handles the response to the CreateSystem request. The method always
+// closes the http.Response Body.
+func (client BaseClient) CreateSystemResponder(resp *http.Response) (result System, err error) {
+	err = autorest.Respond(
+		resp,
+		client.ByInspecting(),
+		azure.WithErrorUnlessStatusCode(http.StatusOK),
+		autorest.ByUnmarshallingJSON(&result),
+		autorest.ByClosing())
+	result.Response = autorest.Response{Response: resp}
+	return
+}
+
+// DeleteExpectation sends the delete expectation request.
+// Parameters:
+// pathParameter - NRN resource path for a beacon resource. The "name" position may be redundent for the
+// feature (ftr) and feature instance (fin) types. The "system" position is the dot-delimited hierarchy of
+// system names above this resource, if the resource is contained within a system.
+func (client BaseClient) DeleteExpectation(ctx context.Context, pathParameter string) (result String, err error) {
+	if err := validation.Validate([]validation.Validation{
+		{TargetValue: pathParameter,
+			Constraints: []validation.Constraint{{Target: "pathParameter", Name: validation.Pattern, Rule: `.*`, Chain: nil}}}}); err != nil {
+		return result, validation.NewError("beacon.BaseClient", "DeleteExpectation", err.Error())
+	}
+
+	req, err := client.DeleteExpectationPreparer(ctx, pathParameter)
+	if err != nil {
+		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "DeleteExpectation", nil, "Failure preparing request")
+		return
+	}
+
+	resp, err := client.DeleteExpectationSender(req)
+	if err != nil {
+		result.Response = autorest.Response{Response: resp}
+		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "DeleteExpectation", resp, "Failure sending request")
+		return
+	}
+
+	result, err = client.DeleteExpectationResponder(resp)
+	if err != nil {
+		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "DeleteExpectation", resp, "Failure responding to request")
+	}
+
+	return
+}
+
+// DeleteExpectationPreparer prepares the DeleteExpectation request.
+func (client BaseClient) DeleteExpectationPreparer(ctx context.Context, pathParameter string) (*http.Request, error) {
 	pathParameters := map[string]interface{}{
 		"path": autorest.Encode("path", pathParameter),
 	}
@@ -221,82 +357,16 @@ func (client BaseClient) DeleteAPIExpectationsPathPreparer(ctx context.Context, 
 	return preparer.Prepare((&http.Request{}).WithContext(ctx))
 }
 
-// DeleteAPIExpectationsPathSender sends the DeleteAPIExpectationsPath request. The method will close the
+// DeleteExpectationSender sends the DeleteExpectation request. The method will close the
 // http.Response Body if it receives an error.
-func (client BaseClient) DeleteAPIExpectationsPathSender(req *http.Request) (*http.Response, error) {
+func (client BaseClient) DeleteExpectationSender(req *http.Request) (*http.Response, error) {
 	return autorest.SendWithSender(client, req,
 		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
 }
 
-// DeleteAPIExpectationsPathResponder handles the response to the DeleteAPIExpectationsPath request. The method always
+// DeleteExpectationResponder handles the response to the DeleteExpectation request. The method always
 // closes the http.Response Body.
-func (client BaseClient) DeleteAPIExpectationsPathResponder(resp *http.Response) (result String, err error) {
-	err = autorest.Respond(
-		resp,
-		client.ByInspecting(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK),
-		autorest.ByUnmarshallingJSON(&result.Value),
-		autorest.ByClosing())
-	result.Response = autorest.Response{Response: resp}
-	return
-}
-
-// DeleteAPISystemsPath sends the delete api systems path request.
-// Parameters:
-// pathParameter - NRN resource path for a beacon resource. The "name" position may be redundent for the
-// feature (ftr) and feature instance (fin) types. The "system" position is the dot-delimited hierarchy of
-// system names above this resource, if the resource is contained within a system.
-func (client BaseClient) DeleteAPISystemsPath(ctx context.Context, pathParameter string) (result String, err error) {
-	if err := validation.Validate([]validation.Validation{
-		{TargetValue: pathParameter,
-			Constraints: []validation.Constraint{{Target: "pathParameter", Name: validation.Pattern, Rule: `^nrn:beacon:(?<tenant>[^:]+:(?<type>sys|exp|ftr|fin):(?<feature>[^:]+)?:(?<version>[^:]+)?:(?<instance>[^:]*)?:(?<system>[^:]*)?:(?<name>[^:]*)?)$`, Chain: nil}}}}); err != nil {
-		return result, validation.NewError("beacon.BaseClient", "DeleteAPISystemsPath", err.Error())
-	}
-
-	req, err := client.DeleteAPISystemsPathPreparer(ctx, pathParameter)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "DeleteAPISystemsPath", nil, "Failure preparing request")
-		return
-	}
-
-	resp, err := client.DeleteAPISystemsPathSender(req)
-	if err != nil {
-		result.Response = autorest.Response{Response: resp}
-		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "DeleteAPISystemsPath", resp, "Failure sending request")
-		return
-	}
-
-	result, err = client.DeleteAPISystemsPathResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "DeleteAPISystemsPath", resp, "Failure responding to request")
-	}
-
-	return
-}
-
-// DeleteAPISystemsPathPreparer prepares the DeleteAPISystemsPath request.
-func (client BaseClient) DeleteAPISystemsPathPreparer(ctx context.Context, pathParameter string) (*http.Request, error) {
-	pathParameters := map[string]interface{}{
-		"path": autorest.Encode("path", pathParameter),
-	}
-
-	preparer := autorest.CreatePreparer(
-		autorest.AsDelete(),
-		autorest.WithBaseURL(client.BaseURI),
-		autorest.WithPathParameters("/api/systems/{path}", pathParameters))
-	return preparer.Prepare((&http.Request{}).WithContext(ctx))
-}
-
-// DeleteAPISystemsPathSender sends the DeleteAPISystemsPath request. The method will close the
-// http.Response Body if it receives an error.
-func (client BaseClient) DeleteAPISystemsPathSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-}
-
-// DeleteAPISystemsPathResponder handles the response to the DeleteAPISystemsPath request. The method always
-// closes the http.Response Body.
-func (client BaseClient) DeleteAPISystemsPathResponder(resp *http.Response) (result String, err error) {
+func (client BaseClient) DeleteExpectationResponder(resp *http.Response) (result String, err error) {
 	err = autorest.Respond(
 		resp,
 		client.ByInspecting(),
@@ -365,6 +435,72 @@ func (client BaseClient) DeleteFeatureInstanceResponder(resp *http.Response) (re
 	return
 }
 
+// DeleteSystem sends the delete system request.
+// Parameters:
+// pathParameter - NRN resource path for a beacon resource. The "name" position may be redundent for the
+// feature (ftr) and feature instance (fin) types. The "system" position is the dot-delimited hierarchy of
+// system names above this resource, if the resource is contained within a system.
+func (client BaseClient) DeleteSystem(ctx context.Context, pathParameter string) (result String, err error) {
+	if err := validation.Validate([]validation.Validation{
+		{TargetValue: pathParameter,
+			Constraints: []validation.Constraint{{Target: "pathParameter", Name: validation.Pattern, Rule: `.*`, Chain: nil}}}}); err != nil {
+		return result, validation.NewError("beacon.BaseClient", "DeleteSystem", err.Error())
+	}
+
+	req, err := client.DeleteSystemPreparer(ctx, pathParameter)
+	if err != nil {
+		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "DeleteSystem", nil, "Failure preparing request")
+		return
+	}
+
+	resp, err := client.DeleteSystemSender(req)
+	if err != nil {
+		result.Response = autorest.Response{Response: resp}
+		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "DeleteSystem", resp, "Failure sending request")
+		return
+	}
+
+	result, err = client.DeleteSystemResponder(resp)
+	if err != nil {
+		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "DeleteSystem", resp, "Failure responding to request")
+	}
+
+	return
+}
+
+// DeleteSystemPreparer prepares the DeleteSystem request.
+func (client BaseClient) DeleteSystemPreparer(ctx context.Context, pathParameter string) (*http.Request, error) {
+	pathParameters := map[string]interface{}{
+		"path": autorest.Encode("path", pathParameter),
+	}
+
+	preparer := autorest.CreatePreparer(
+		autorest.AsDelete(),
+		autorest.WithBaseURL(client.BaseURI),
+		autorest.WithPathParameters("/api/systems/{path}", pathParameters))
+	return preparer.Prepare((&http.Request{}).WithContext(ctx))
+}
+
+// DeleteSystemSender sends the DeleteSystem request. The method will close the
+// http.Response Body if it receives an error.
+func (client BaseClient) DeleteSystemSender(req *http.Request) (*http.Response, error) {
+	return autorest.SendWithSender(client, req,
+		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+}
+
+// DeleteSystemResponder handles the response to the DeleteSystem request. The method always
+// closes the http.Response Body.
+func (client BaseClient) DeleteSystemResponder(resp *http.Response) (result String, err error) {
+	err = autorest.Respond(
+		resp,
+		client.ByInspecting(),
+		azure.WithErrorUnlessStatusCode(http.StatusOK),
+		autorest.ByUnmarshallingJSON(&result.Value),
+		autorest.ByClosing())
+	result.Response = autorest.Response{Response: resp}
+	return
+}
+
 // DisableFeatureInstance sends the disable feature instance request.
 func (client BaseClient) DisableFeatureInstance(ctx context.Context, featureName string, featureVersion string, instanceName string) (result FeatureInstance, err error) {
 	req, err := client.DisableFeatureInstancePreparer(ctx, featureName, featureVersion, instanceName)
@@ -418,6 +554,148 @@ func (client BaseClient) DisableFeatureInstanceResponder(resp *http.Response) (r
 		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK),
 		autorest.ByUnmarshallingJSON(&result),
+		autorest.ByClosing())
+	result.Response = autorest.Response{Response: resp}
+	return
+}
+
+// FailExpectation sends the fail expectation request.
+// Parameters:
+// pathParameter - NRN resource path for a beacon resource. The "name" position may be redundent for the
+// feature (ftr) and feature instance (fin) types. The "system" position is the dot-delimited hierarchy of
+// system names above this resource, if the resource is contained within a system.
+func (client BaseClient) FailExpectation(ctx context.Context, pathParameter string, body *FailedExpectation) (result String, err error) {
+	if err := validation.Validate([]validation.Validation{
+		{TargetValue: pathParameter,
+			Constraints: []validation.Constraint{{Target: "pathParameter", Name: validation.Pattern, Rule: `.*`, Chain: nil}}}}); err != nil {
+		return result, validation.NewError("beacon.BaseClient", "FailExpectation", err.Error())
+	}
+
+	req, err := client.FailExpectationPreparer(ctx, pathParameter, body)
+	if err != nil {
+		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "FailExpectation", nil, "Failure preparing request")
+		return
+	}
+
+	resp, err := client.FailExpectationSender(req)
+	if err != nil {
+		result.Response = autorest.Response{Response: resp}
+		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "FailExpectation", resp, "Failure sending request")
+		return
+	}
+
+	result, err = client.FailExpectationResponder(resp)
+	if err != nil {
+		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "FailExpectation", resp, "Failure responding to request")
+	}
+
+	return
+}
+
+// FailExpectationPreparer prepares the FailExpectation request.
+func (client BaseClient) FailExpectationPreparer(ctx context.Context, pathParameter string, body *FailedExpectation) (*http.Request, error) {
+	pathParameters := map[string]interface{}{
+		"path": autorest.Encode("path", pathParameter),
+	}
+
+	preparer := autorest.CreatePreparer(
+		autorest.AsContentType("application/json; charset=utf-8"),
+		autorest.AsPost(),
+		autorest.WithBaseURL(client.BaseURI),
+		autorest.WithPathParameters("/api/expectations/{path}/events/failed", pathParameters))
+	if body != nil {
+		preparer = autorest.DecoratePreparer(preparer,
+			autorest.WithJSON(body))
+	}
+	return preparer.Prepare((&http.Request{}).WithContext(ctx))
+}
+
+// FailExpectationSender sends the FailExpectation request. The method will close the
+// http.Response Body if it receives an error.
+func (client BaseClient) FailExpectationSender(req *http.Request) (*http.Response, error) {
+	return autorest.SendWithSender(client, req,
+		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+}
+
+// FailExpectationResponder handles the response to the FailExpectation request. The method always
+// closes the http.Response Body.
+func (client BaseClient) FailExpectationResponder(resp *http.Response) (result String, err error) {
+	err = autorest.Respond(
+		resp,
+		client.ByInspecting(),
+		azure.WithErrorUnlessStatusCode(http.StatusOK),
+		autorest.ByUnmarshallingJSON(&result.Value),
+		autorest.ByClosing())
+	result.Response = autorest.Response{Response: resp}
+	return
+}
+
+// FulfilExpectation sends the fulfil expectation request.
+// Parameters:
+// pathParameter - NRN resource path for a beacon resource. The "name" position may be redundent for the
+// feature (ftr) and feature instance (fin) types. The "system" position is the dot-delimited hierarchy of
+// system names above this resource, if the resource is contained within a system.
+func (client BaseClient) FulfilExpectation(ctx context.Context, pathParameter string, body *FulfilledExpectation) (result String, err error) {
+	if err := validation.Validate([]validation.Validation{
+		{TargetValue: pathParameter,
+			Constraints: []validation.Constraint{{Target: "pathParameter", Name: validation.Pattern, Rule: `.*`, Chain: nil}}}}); err != nil {
+		return result, validation.NewError("beacon.BaseClient", "FulfilExpectation", err.Error())
+	}
+
+	req, err := client.FulfilExpectationPreparer(ctx, pathParameter, body)
+	if err != nil {
+		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "FulfilExpectation", nil, "Failure preparing request")
+		return
+	}
+
+	resp, err := client.FulfilExpectationSender(req)
+	if err != nil {
+		result.Response = autorest.Response{Response: resp}
+		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "FulfilExpectation", resp, "Failure sending request")
+		return
+	}
+
+	result, err = client.FulfilExpectationResponder(resp)
+	if err != nil {
+		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "FulfilExpectation", resp, "Failure responding to request")
+	}
+
+	return
+}
+
+// FulfilExpectationPreparer prepares the FulfilExpectation request.
+func (client BaseClient) FulfilExpectationPreparer(ctx context.Context, pathParameter string, body *FulfilledExpectation) (*http.Request, error) {
+	pathParameters := map[string]interface{}{
+		"path": autorest.Encode("path", pathParameter),
+	}
+
+	preparer := autorest.CreatePreparer(
+		autorest.AsContentType("application/json; charset=utf-8"),
+		autorest.AsPost(),
+		autorest.WithBaseURL(client.BaseURI),
+		autorest.WithPathParameters("/api/expectations/{path}/events/fulfilled", pathParameters))
+	if body != nil {
+		preparer = autorest.DecoratePreparer(preparer,
+			autorest.WithJSON(body))
+	}
+	return preparer.Prepare((&http.Request{}).WithContext(ctx))
+}
+
+// FulfilExpectationSender sends the FulfilExpectation request. The method will close the
+// http.Response Body if it receives an error.
+func (client BaseClient) FulfilExpectationSender(req *http.Request) (*http.Response, error) {
+	return autorest.SendWithSender(client, req,
+		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+}
+
+// FulfilExpectationResponder handles the response to the FulfilExpectation request. The method always
+// closes the http.Response Body.
+func (client BaseClient) FulfilExpectationResponder(resp *http.Response) (result String, err error) {
+	err = autorest.Respond(
+		resp,
+		client.ByInspecting(),
+		azure.WithErrorUnlessStatusCode(http.StatusOK),
+		autorest.ByUnmarshallingJSON(&result.Value),
 		autorest.ByClosing())
 	result.Response = autorest.Response{Response: resp}
 	return
@@ -533,41 +811,41 @@ func (client BaseClient) GetAPIConfigsIDResponder(resp *http.Response) (result S
 	return
 }
 
-// GetAPIEventsPath sends the get api events path request.
+// GetEventsByPath sends the get events by path request.
 // Parameters:
 // pathParameter - NRN resource path for a beacon resource. The "name" position may be redundent for the
 // feature (ftr) and feature instance (fin) types. The "system" position is the dot-delimited hierarchy of
 // system names above this resource, if the resource is contained within a system.
-func (client BaseClient) GetAPIEventsPath(ctx context.Context, pathParameter string, top *float64, skip *float64) (result ListEvent, err error) {
+func (client BaseClient) GetEventsByPath(ctx context.Context, pathParameter string, top *float64, skip *float64) (result ListEvent, err error) {
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: pathParameter,
-			Constraints: []validation.Constraint{{Target: "pathParameter", Name: validation.Pattern, Rule: `^nrn:beacon:(?<tenant>[^:]+:(?<type>sys|exp|ftr|fin):(?<feature>[^:]+)?:(?<version>[^:]+)?:(?<instance>[^:]*)?:(?<system>[^:]*)?:(?<name>[^:]*)?)$`, Chain: nil}}}}); err != nil {
-		return result, validation.NewError("beacon.BaseClient", "GetAPIEventsPath", err.Error())
+			Constraints: []validation.Constraint{{Target: "pathParameter", Name: validation.Pattern, Rule: `.*`, Chain: nil}}}}); err != nil {
+		return result, validation.NewError("beacon.BaseClient", "GetEventsByPath", err.Error())
 	}
 
-	req, err := client.GetAPIEventsPathPreparer(ctx, pathParameter, top, skip)
+	req, err := client.GetEventsByPathPreparer(ctx, pathParameter, top, skip)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "GetAPIEventsPath", nil, "Failure preparing request")
+		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "GetEventsByPath", nil, "Failure preparing request")
 		return
 	}
 
-	resp, err := client.GetAPIEventsPathSender(req)
+	resp, err := client.GetEventsByPathSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "GetAPIEventsPath", resp, "Failure sending request")
+		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "GetEventsByPath", resp, "Failure sending request")
 		return
 	}
 
-	result, err = client.GetAPIEventsPathResponder(resp)
+	result, err = client.GetEventsByPathResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "GetAPIEventsPath", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "GetEventsByPath", resp, "Failure responding to request")
 	}
 
 	return
 }
 
-// GetAPIEventsPathPreparer prepares the GetAPIEventsPath request.
-func (client BaseClient) GetAPIEventsPathPreparer(ctx context.Context, pathParameter string, top *float64, skip *float64) (*http.Request, error) {
+// GetEventsByPathPreparer prepares the GetEventsByPath request.
+func (client BaseClient) GetEventsByPathPreparer(ctx context.Context, pathParameter string, top *float64, skip *float64) (*http.Request, error) {
 	pathParameters := map[string]interface{}{
 		"path": autorest.Encode("path", pathParameter),
 	}
@@ -592,16 +870,16 @@ func (client BaseClient) GetAPIEventsPathPreparer(ctx context.Context, pathParam
 	return preparer.Prepare((&http.Request{}).WithContext(ctx))
 }
 
-// GetAPIEventsPathSender sends the GetAPIEventsPath request. The method will close the
+// GetEventsByPathSender sends the GetEventsByPath request. The method will close the
 // http.Response Body if it receives an error.
-func (client BaseClient) GetAPIEventsPathSender(req *http.Request) (*http.Response, error) {
+func (client BaseClient) GetEventsByPathSender(req *http.Request) (*http.Response, error) {
 	return autorest.SendWithSender(client, req,
 		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
 }
 
-// GetAPIEventsPathResponder handles the response to the GetAPIEventsPath request. The method always
+// GetEventsByPathResponder handles the response to the GetEventsByPath request. The method always
 // closes the http.Response Body.
-func (client BaseClient) GetAPIEventsPathResponder(resp *http.Response) (result ListEvent, err error) {
+func (client BaseClient) GetEventsByPathResponder(resp *http.Response) (result ListEvent, err error) {
 	err = autorest.Respond(
 		resp,
 		client.ByInspecting(),
@@ -612,101 +890,41 @@ func (client BaseClient) GetAPIEventsPathResponder(resp *http.Response) (result 
 	return
 }
 
-// GetAPIExpectations sends the get api expectations request.
-func (client BaseClient) GetAPIExpectations(ctx context.Context, tenant string, system string) (result ListExpectation, err error) {
-	req, err := client.GetAPIExpectationsPreparer(ctx, tenant, system)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "GetAPIExpectations", nil, "Failure preparing request")
-		return
-	}
-
-	resp, err := client.GetAPIExpectationsSender(req)
-	if err != nil {
-		result.Response = autorest.Response{Response: resp}
-		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "GetAPIExpectations", resp, "Failure sending request")
-		return
-	}
-
-	result, err = client.GetAPIExpectationsResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "GetAPIExpectations", resp, "Failure responding to request")
-	}
-
-	return
-}
-
-// GetAPIExpectationsPreparer prepares the GetAPIExpectations request.
-func (client BaseClient) GetAPIExpectationsPreparer(ctx context.Context, tenant string, system string) (*http.Request, error) {
-	queryParameters := map[string]interface{}{
-		"tenant": autorest.Encode("query", tenant),
-	}
-	if len(system) > 0 {
-		queryParameters["system"] = autorest.Encode("query", system)
-	}
-
-	preparer := autorest.CreatePreparer(
-		autorest.AsGet(),
-		autorest.WithBaseURL(client.BaseURI),
-		autorest.WithPath("/api/expectations"),
-		autorest.WithQueryParameters(queryParameters))
-	return preparer.Prepare((&http.Request{}).WithContext(ctx))
-}
-
-// GetAPIExpectationsSender sends the GetAPIExpectations request. The method will close the
-// http.Response Body if it receives an error.
-func (client BaseClient) GetAPIExpectationsSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-}
-
-// GetAPIExpectationsResponder handles the response to the GetAPIExpectations request. The method always
-// closes the http.Response Body.
-func (client BaseClient) GetAPIExpectationsResponder(resp *http.Response) (result ListExpectation, err error) {
-	err = autorest.Respond(
-		resp,
-		client.ByInspecting(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK),
-		autorest.ByUnmarshallingJSON(&result.Value),
-		autorest.ByClosing())
-	result.Response = autorest.Response{Response: resp}
-	return
-}
-
-// GetAPIExpectationsPath sends the get api expectations path request.
+// GetExpectation sends the get expectation request.
 // Parameters:
 // pathParameter - NRN resource path for a beacon resource. The "name" position may be redundent for the
 // feature (ftr) and feature instance (fin) types. The "system" position is the dot-delimited hierarchy of
 // system names above this resource, if the resource is contained within a system.
-func (client BaseClient) GetAPIExpectationsPath(ctx context.Context, pathParameter string) (result Expectation, err error) {
+func (client BaseClient) GetExpectation(ctx context.Context, pathParameter string) (result Expectation, err error) {
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: pathParameter,
-			Constraints: []validation.Constraint{{Target: "pathParameter", Name: validation.Pattern, Rule: `^nrn:beacon:(?<tenant>[^:]+:(?<type>sys|exp|ftr|fin):(?<feature>[^:]+)?:(?<version>[^:]+)?:(?<instance>[^:]*)?:(?<system>[^:]*)?:(?<name>[^:]*)?)$`, Chain: nil}}}}); err != nil {
-		return result, validation.NewError("beacon.BaseClient", "GetAPIExpectationsPath", err.Error())
+			Constraints: []validation.Constraint{{Target: "pathParameter", Name: validation.Pattern, Rule: `.*`, Chain: nil}}}}); err != nil {
+		return result, validation.NewError("beacon.BaseClient", "GetExpectation", err.Error())
 	}
 
-	req, err := client.GetAPIExpectationsPathPreparer(ctx, pathParameter)
+	req, err := client.GetExpectationPreparer(ctx, pathParameter)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "GetAPIExpectationsPath", nil, "Failure preparing request")
+		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "GetExpectation", nil, "Failure preparing request")
 		return
 	}
 
-	resp, err := client.GetAPIExpectationsPathSender(req)
+	resp, err := client.GetExpectationSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "GetAPIExpectationsPath", resp, "Failure sending request")
+		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "GetExpectation", resp, "Failure sending request")
 		return
 	}
 
-	result, err = client.GetAPIExpectationsPathResponder(resp)
+	result, err = client.GetExpectationResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "GetAPIExpectationsPath", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "GetExpectation", resp, "Failure responding to request")
 	}
 
 	return
 }
 
-// GetAPIExpectationsPathPreparer prepares the GetAPIExpectationsPath request.
-func (client BaseClient) GetAPIExpectationsPathPreparer(ctx context.Context, pathParameter string) (*http.Request, error) {
+// GetExpectationPreparer prepares the GetExpectation request.
+func (client BaseClient) GetExpectationPreparer(ctx context.Context, pathParameter string) (*http.Request, error) {
 	pathParameters := map[string]interface{}{
 		"path": autorest.Encode("path", pathParameter),
 	}
@@ -718,16 +936,16 @@ func (client BaseClient) GetAPIExpectationsPathPreparer(ctx context.Context, pat
 	return preparer.Prepare((&http.Request{}).WithContext(ctx))
 }
 
-// GetAPIExpectationsPathSender sends the GetAPIExpectationsPath request. The method will close the
+// GetExpectationSender sends the GetExpectation request. The method will close the
 // http.Response Body if it receives an error.
-func (client BaseClient) GetAPIExpectationsPathSender(req *http.Request) (*http.Response, error) {
+func (client BaseClient) GetExpectationSender(req *http.Request) (*http.Response, error) {
 	return autorest.SendWithSender(client, req,
 		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
 }
 
-// GetAPIExpectationsPathResponder handles the response to the GetAPIExpectationsPath request. The method always
+// GetExpectationResponder handles the response to the GetExpectation request. The method always
 // closes the http.Response Body.
-func (client BaseClient) GetAPIExpectationsPathResponder(resp *http.Response) (result Expectation, err error) {
+func (client BaseClient) GetExpectationResponder(resp *http.Response) (result Expectation, err error) {
 	err = autorest.Respond(
 		resp,
 		client.ByInspecting(),
@@ -738,41 +956,41 @@ func (client BaseClient) GetAPIExpectationsPathResponder(resp *http.Response) (r
 	return
 }
 
-// GetAPIExpectationsPathEvents sends the get api expectations path events request.
+// GetExpectationEvents sends the get expectation events request.
 // Parameters:
 // pathParameter - NRN resource path for a beacon resource. The "name" position may be redundent for the
 // feature (ftr) and feature instance (fin) types. The "system" position is the dot-delimited hierarchy of
 // system names above this resource, if the resource is contained within a system.
-func (client BaseClient) GetAPIExpectationsPathEvents(ctx context.Context, pathParameter string, top *float64, skip *float64) (result ListEvent, err error) {
+func (client BaseClient) GetExpectationEvents(ctx context.Context, pathParameter string, top *float64, skip *float64) (result ListEvent, err error) {
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: pathParameter,
-			Constraints: []validation.Constraint{{Target: "pathParameter", Name: validation.Pattern, Rule: `^nrn:beacon:(?<tenant>[^:]+:(?<type>sys|exp|ftr|fin):(?<feature>[^:]+)?:(?<version>[^:]+)?:(?<instance>[^:]*)?:(?<system>[^:]*)?:(?<name>[^:]*)?)$`, Chain: nil}}}}); err != nil {
-		return result, validation.NewError("beacon.BaseClient", "GetAPIExpectationsPathEvents", err.Error())
+			Constraints: []validation.Constraint{{Target: "pathParameter", Name: validation.Pattern, Rule: `.*`, Chain: nil}}}}); err != nil {
+		return result, validation.NewError("beacon.BaseClient", "GetExpectationEvents", err.Error())
 	}
 
-	req, err := client.GetAPIExpectationsPathEventsPreparer(ctx, pathParameter, top, skip)
+	req, err := client.GetExpectationEventsPreparer(ctx, pathParameter, top, skip)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "GetAPIExpectationsPathEvents", nil, "Failure preparing request")
+		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "GetExpectationEvents", nil, "Failure preparing request")
 		return
 	}
 
-	resp, err := client.GetAPIExpectationsPathEventsSender(req)
+	resp, err := client.GetExpectationEventsSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "GetAPIExpectationsPathEvents", resp, "Failure sending request")
+		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "GetExpectationEvents", resp, "Failure sending request")
 		return
 	}
 
-	result, err = client.GetAPIExpectationsPathEventsResponder(resp)
+	result, err = client.GetExpectationEventsResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "GetAPIExpectationsPathEvents", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "GetExpectationEvents", resp, "Failure responding to request")
 	}
 
 	return
 }
 
-// GetAPIExpectationsPathEventsPreparer prepares the GetAPIExpectationsPathEvents request.
-func (client BaseClient) GetAPIExpectationsPathEventsPreparer(ctx context.Context, pathParameter string, top *float64, skip *float64) (*http.Request, error) {
+// GetExpectationEventsPreparer prepares the GetExpectationEvents request.
+func (client BaseClient) GetExpectationEventsPreparer(ctx context.Context, pathParameter string, top *float64, skip *float64) (*http.Request, error) {
 	pathParameters := map[string]interface{}{
 		"path": autorest.Encode("path", pathParameter),
 	}
@@ -797,16 +1015,16 @@ func (client BaseClient) GetAPIExpectationsPathEventsPreparer(ctx context.Contex
 	return preparer.Prepare((&http.Request{}).WithContext(ctx))
 }
 
-// GetAPIExpectationsPathEventsSender sends the GetAPIExpectationsPathEvents request. The method will close the
+// GetExpectationEventsSender sends the GetExpectationEvents request. The method will close the
 // http.Response Body if it receives an error.
-func (client BaseClient) GetAPIExpectationsPathEventsSender(req *http.Request) (*http.Response, error) {
+func (client BaseClient) GetExpectationEventsSender(req *http.Request) (*http.Response, error) {
 	return autorest.SendWithSender(client, req,
 		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
 }
 
-// GetAPIExpectationsPathEventsResponder handles the response to the GetAPIExpectationsPathEvents request. The method always
+// GetExpectationEventsResponder handles the response to the GetExpectationEvents request. The method always
 // closes the http.Response Body.
-func (client BaseClient) GetAPIExpectationsPathEventsResponder(resp *http.Response) (result ListEvent, err error) {
+func (client BaseClient) GetExpectationEventsResponder(resp *http.Response) (result ListEvent, err error) {
 	err = autorest.Respond(
 		resp,
 		client.ByInspecting(),
@@ -817,124 +1035,61 @@ func (client BaseClient) GetAPIExpectationsPathEventsResponder(resp *http.Respon
 	return
 }
 
-// GetAPISystems sends the get api systems request.
-func (client BaseClient) GetAPISystems(ctx context.Context, tenant string) (result ListSystem, err error) {
-	req, err := client.GetAPISystemsPreparer(ctx, tenant)
+// GetExpectations sends the get expectations request.
+func (client BaseClient) GetExpectations(ctx context.Context, tenant string, system string) (result ListExpectation, err error) {
+	req, err := client.GetExpectationsPreparer(ctx, tenant, system)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "GetAPISystems", nil, "Failure preparing request")
+		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "GetExpectations", nil, "Failure preparing request")
 		return
 	}
 
-	resp, err := client.GetAPISystemsSender(req)
+	resp, err := client.GetExpectationsSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "GetAPISystems", resp, "Failure sending request")
+		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "GetExpectations", resp, "Failure sending request")
 		return
 	}
 
-	result, err = client.GetAPISystemsResponder(resp)
+	result, err = client.GetExpectationsResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "GetAPISystems", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "GetExpectations", resp, "Failure responding to request")
 	}
 
 	return
 }
 
-// GetAPISystemsPreparer prepares the GetAPISystems request.
-func (client BaseClient) GetAPISystemsPreparer(ctx context.Context, tenant string) (*http.Request, error) {
+// GetExpectationsPreparer prepares the GetExpectations request.
+func (client BaseClient) GetExpectationsPreparer(ctx context.Context, tenant string, system string) (*http.Request, error) {
 	queryParameters := map[string]interface{}{
 		"tenant": autorest.Encode("query", tenant),
+	}
+	if len(system) > 0 {
+		queryParameters["system"] = autorest.Encode("query", system)
 	}
 
 	preparer := autorest.CreatePreparer(
 		autorest.AsGet(),
 		autorest.WithBaseURL(client.BaseURI),
-		autorest.WithPath("/api/systems"),
+		autorest.WithPath("/api/expectations"),
 		autorest.WithQueryParameters(queryParameters))
 	return preparer.Prepare((&http.Request{}).WithContext(ctx))
 }
 
-// GetAPISystemsSender sends the GetAPISystems request. The method will close the
+// GetExpectationsSender sends the GetExpectations request. The method will close the
 // http.Response Body if it receives an error.
-func (client BaseClient) GetAPISystemsSender(req *http.Request) (*http.Response, error) {
+func (client BaseClient) GetExpectationsSender(req *http.Request) (*http.Response, error) {
 	return autorest.SendWithSender(client, req,
 		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
 }
 
-// GetAPISystemsResponder handles the response to the GetAPISystems request. The method always
+// GetExpectationsResponder handles the response to the GetExpectations request. The method always
 // closes the http.Response Body.
-func (client BaseClient) GetAPISystemsResponder(resp *http.Response) (result ListSystem, err error) {
+func (client BaseClient) GetExpectationsResponder(resp *http.Response) (result ListExpectation, err error) {
 	err = autorest.Respond(
 		resp,
 		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK),
 		autorest.ByUnmarshallingJSON(&result.Value),
-		autorest.ByClosing())
-	result.Response = autorest.Response{Response: resp}
-	return
-}
-
-// GetAPISystemsPath sends the get api systems path request.
-// Parameters:
-// pathParameter - NRN resource path for a beacon resource. The "name" position may be redundent for the
-// feature (ftr) and feature instance (fin) types. The "system" position is the dot-delimited hierarchy of
-// system names above this resource, if the resource is contained within a system.
-func (client BaseClient) GetAPISystemsPath(ctx context.Context, pathParameter string) (result System, err error) {
-	if err := validation.Validate([]validation.Validation{
-		{TargetValue: pathParameter,
-			Constraints: []validation.Constraint{{Target: "pathParameter", Name: validation.Pattern, Rule: `^nrn:beacon:(?<tenant>[^:]+:(?<type>sys|exp|ftr|fin):(?<feature>[^:]+)?:(?<version>[^:]+)?:(?<instance>[^:]*)?:(?<system>[^:]*)?:(?<name>[^:]*)?)$`, Chain: nil}}}}); err != nil {
-		return result, validation.NewError("beacon.BaseClient", "GetAPISystemsPath", err.Error())
-	}
-
-	req, err := client.GetAPISystemsPathPreparer(ctx, pathParameter)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "GetAPISystemsPath", nil, "Failure preparing request")
-		return
-	}
-
-	resp, err := client.GetAPISystemsPathSender(req)
-	if err != nil {
-		result.Response = autorest.Response{Response: resp}
-		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "GetAPISystemsPath", resp, "Failure sending request")
-		return
-	}
-
-	result, err = client.GetAPISystemsPathResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "GetAPISystemsPath", resp, "Failure responding to request")
-	}
-
-	return
-}
-
-// GetAPISystemsPathPreparer prepares the GetAPISystemsPath request.
-func (client BaseClient) GetAPISystemsPathPreparer(ctx context.Context, pathParameter string) (*http.Request, error) {
-	pathParameters := map[string]interface{}{
-		"path": autorest.Encode("path", pathParameter),
-	}
-
-	preparer := autorest.CreatePreparer(
-		autorest.AsGet(),
-		autorest.WithBaseURL(client.BaseURI),
-		autorest.WithPathParameters("/api/systems/{path}", pathParameters))
-	return preparer.Prepare((&http.Request{}).WithContext(ctx))
-}
-
-// GetAPISystemsPathSender sends the GetAPISystemsPath request. The method will close the
-// http.Response Body if it receives an error.
-func (client BaseClient) GetAPISystemsPathSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-}
-
-// GetAPISystemsPathResponder handles the response to the GetAPISystemsPath request. The method always
-// closes the http.Response Body.
-func (client BaseClient) GetAPISystemsPathResponder(resp *http.Response) (result System, err error) {
-	err = autorest.Respond(
-		resp,
-		client.ByInspecting(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK),
-		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
 	result.Response = autorest.Response{Response: resp}
 	return
@@ -1061,7 +1216,7 @@ func (client BaseClient) GetFeatureInstanceByKeyResponder(resp *http.Response) (
 func (client BaseClient) GetFeatureInstances(ctx context.Context, featureName string, featureVersion string, versionRange string, instanceID string, tenant string) (result ListFeatureInstance, err error) {
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: featureVersion,
-			Constraints: []validation.Constraint{{Target: "featureVersion", Name: validation.Pattern, Rule: `^v?((\d+)\.(\d+)\.(\d+))(?:-([\dA-Za-z\-]+(?:\.[\dA-Za-z\-]+)*))?(?:\+([\dA-Za-z\-]+(?:\.[\dA-Za-z\-]+)*))?$`, Chain: nil}}}}); err != nil {
+			Constraints: []validation.Constraint{{Target: "featureVersion", Name: validation.Pattern, Rule: `.*`, Chain: nil}}}}); err != nil {
 		return result, validation.NewError("beacon.BaseClient", "GetFeatureInstances", err.Error())
 	}
 
@@ -1194,65 +1349,62 @@ func (client BaseClient) GetFeaturesResponder(resp *http.Response) (result ListF
 	return
 }
 
-// PostAPIExpectations sends the post api expectations request.
-func (client BaseClient) PostAPIExpectations(ctx context.Context, body *NewExpectation) (result Expectation, err error) {
+// GetSystem sends the get system request.
+// Parameters:
+// pathParameter - NRN resource path for a beacon resource. The "name" position may be redundent for the
+// feature (ftr) and feature instance (fin) types. The "system" position is the dot-delimited hierarchy of
+// system names above this resource, if the resource is contained within a system.
+func (client BaseClient) GetSystem(ctx context.Context, pathParameter string) (result System, err error) {
 	if err := validation.Validate([]validation.Validation{
-		{TargetValue: body,
-			Constraints: []validation.Constraint{{Target: "body", Name: validation.Null, Rule: false,
-				Chain: []validation.Constraint{{Target: "body.Name", Name: validation.Null, Rule: true, Chain: nil},
-					{Target: "body.DisplayName", Name: validation.Null, Rule: true, Chain: nil},
-					{Target: "body.Tenant", Name: validation.Null, Rule: true, Chain: nil},
-					{Target: "body.System", Name: validation.Null, Rule: true, Chain: nil},
-					{Target: "body.Schedule", Name: validation.Null, Rule: true, Chain: nil},
-				}}}}}); err != nil {
-		return result, validation.NewError("beacon.BaseClient", "PostAPIExpectations", err.Error())
+		{TargetValue: pathParameter,
+			Constraints: []validation.Constraint{{Target: "pathParameter", Name: validation.Pattern, Rule: `.*`, Chain: nil}}}}); err != nil {
+		return result, validation.NewError("beacon.BaseClient", "GetSystem", err.Error())
 	}
 
-	req, err := client.PostAPIExpectationsPreparer(ctx, body)
+	req, err := client.GetSystemPreparer(ctx, pathParameter)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "PostAPIExpectations", nil, "Failure preparing request")
+		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "GetSystem", nil, "Failure preparing request")
 		return
 	}
 
-	resp, err := client.PostAPIExpectationsSender(req)
+	resp, err := client.GetSystemSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "PostAPIExpectations", resp, "Failure sending request")
+		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "GetSystem", resp, "Failure sending request")
 		return
 	}
 
-	result, err = client.PostAPIExpectationsResponder(resp)
+	result, err = client.GetSystemResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "PostAPIExpectations", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "GetSystem", resp, "Failure responding to request")
 	}
 
 	return
 }
 
-// PostAPIExpectationsPreparer prepares the PostAPIExpectations request.
-func (client BaseClient) PostAPIExpectationsPreparer(ctx context.Context, body *NewExpectation) (*http.Request, error) {
-	preparer := autorest.CreatePreparer(
-		autorest.AsContentType("application/json; charset=utf-8"),
-		autorest.AsPost(),
-		autorest.WithBaseURL(client.BaseURI),
-		autorest.WithPath("/api/expectations"))
-	if body != nil {
-		preparer = autorest.DecoratePreparer(preparer,
-			autorest.WithJSON(body))
+// GetSystemPreparer prepares the GetSystem request.
+func (client BaseClient) GetSystemPreparer(ctx context.Context, pathParameter string) (*http.Request, error) {
+	pathParameters := map[string]interface{}{
+		"path": autorest.Encode("path", pathParameter),
 	}
+
+	preparer := autorest.CreatePreparer(
+		autorest.AsGet(),
+		autorest.WithBaseURL(client.BaseURI),
+		autorest.WithPathParameters("/api/systems/{path}", pathParameters))
 	return preparer.Prepare((&http.Request{}).WithContext(ctx))
 }
 
-// PostAPIExpectationsSender sends the PostAPIExpectations request. The method will close the
+// GetSystemSender sends the GetSystem request. The method will close the
 // http.Response Body if it receives an error.
-func (client BaseClient) PostAPIExpectationsSender(req *http.Request) (*http.Response, error) {
+func (client BaseClient) GetSystemSender(req *http.Request) (*http.Response, error) {
 	return autorest.SendWithSender(client, req,
 		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
 }
 
-// PostAPIExpectationsResponder handles the response to the PostAPIExpectations request. The method always
+// GetSystemResponder handles the response to the GetSystem request. The method always
 // closes the http.Response Body.
-func (client BaseClient) PostAPIExpectationsResponder(resp *http.Response) (result Expectation, err error) {
+func (client BaseClient) GetSystemResponder(resp *http.Response) (result System, err error) {
 	err = autorest.Respond(
 		resp,
 		client.ByInspecting(),
@@ -1263,67 +1415,53 @@ func (client BaseClient) PostAPIExpectationsResponder(resp *http.Response) (resu
 	return
 }
 
-// PostAPIExpectationsPathEventsFailed sends the post api expectations path events failed request.
-// Parameters:
-// pathParameter - NRN resource path for a beacon resource. The "name" position may be redundent for the
-// feature (ftr) and feature instance (fin) types. The "system" position is the dot-delimited hierarchy of
-// system names above this resource, if the resource is contained within a system.
-func (client BaseClient) PostAPIExpectationsPathEventsFailed(ctx context.Context, pathParameter string, body *FailedExpectation) (result String, err error) {
-	if err := validation.Validate([]validation.Validation{
-		{TargetValue: pathParameter,
-			Constraints: []validation.Constraint{{Target: "pathParameter", Name: validation.Pattern, Rule: `^nrn:beacon:(?<tenant>[^:]+:(?<type>sys|exp|ftr|fin):(?<feature>[^:]+)?:(?<version>[^:]+)?:(?<instance>[^:]*)?:(?<system>[^:]*)?:(?<name>[^:]*)?)$`, Chain: nil}}}}); err != nil {
-		return result, validation.NewError("beacon.BaseClient", "PostAPIExpectationsPathEventsFailed", err.Error())
-	}
-
-	req, err := client.PostAPIExpectationsPathEventsFailedPreparer(ctx, pathParameter, body)
+// GetSystems sends the get systems request.
+func (client BaseClient) GetSystems(ctx context.Context, tenant string) (result ListSystem, err error) {
+	req, err := client.GetSystemsPreparer(ctx, tenant)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "PostAPIExpectationsPathEventsFailed", nil, "Failure preparing request")
+		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "GetSystems", nil, "Failure preparing request")
 		return
 	}
 
-	resp, err := client.PostAPIExpectationsPathEventsFailedSender(req)
+	resp, err := client.GetSystemsSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "PostAPIExpectationsPathEventsFailed", resp, "Failure sending request")
+		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "GetSystems", resp, "Failure sending request")
 		return
 	}
 
-	result, err = client.PostAPIExpectationsPathEventsFailedResponder(resp)
+	result, err = client.GetSystemsResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "PostAPIExpectationsPathEventsFailed", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "GetSystems", resp, "Failure responding to request")
 	}
 
 	return
 }
 
-// PostAPIExpectationsPathEventsFailedPreparer prepares the PostAPIExpectationsPathEventsFailed request.
-func (client BaseClient) PostAPIExpectationsPathEventsFailedPreparer(ctx context.Context, pathParameter string, body *FailedExpectation) (*http.Request, error) {
-	pathParameters := map[string]interface{}{
-		"path": autorest.Encode("path", pathParameter),
+// GetSystemsPreparer prepares the GetSystems request.
+func (client BaseClient) GetSystemsPreparer(ctx context.Context, tenant string) (*http.Request, error) {
+	queryParameters := map[string]interface{}{
+		"tenant": autorest.Encode("query", tenant),
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsContentType("application/json; charset=utf-8"),
-		autorest.AsPost(),
+		autorest.AsGet(),
 		autorest.WithBaseURL(client.BaseURI),
-		autorest.WithPathParameters("/api/expectations/{path}/events/failed", pathParameters))
-	if body != nil {
-		preparer = autorest.DecoratePreparer(preparer,
-			autorest.WithJSON(body))
-	}
+		autorest.WithPath("/api/systems"),
+		autorest.WithQueryParameters(queryParameters))
 	return preparer.Prepare((&http.Request{}).WithContext(ctx))
 }
 
-// PostAPIExpectationsPathEventsFailedSender sends the PostAPIExpectationsPathEventsFailed request. The method will close the
+// GetSystemsSender sends the GetSystems request. The method will close the
 // http.Response Body if it receives an error.
-func (client BaseClient) PostAPIExpectationsPathEventsFailedSender(req *http.Request) (*http.Response, error) {
+func (client BaseClient) GetSystemsSender(req *http.Request) (*http.Response, error) {
 	return autorest.SendWithSender(client, req,
 		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
 }
 
-// PostAPIExpectationsPathEventsFailedResponder handles the response to the PostAPIExpectationsPathEventsFailed request. The method always
+// GetSystemsResponder handles the response to the GetSystems request. The method always
 // closes the http.Response Body.
-func (client BaseClient) PostAPIExpectationsPathEventsFailedResponder(resp *http.Response) (result String, err error) {
+func (client BaseClient) GetSystemsResponder(resp *http.Response) (result ListSystem, err error) {
 	err = autorest.Respond(
 		resp,
 		client.ByInspecting(),
@@ -1334,112 +1472,41 @@ func (client BaseClient) PostAPIExpectationsPathEventsFailedResponder(resp *http
 	return
 }
 
-// PostAPIExpectationsPathEventsFulfilled sends the post api expectations path events fulfilled request.
+// RescheduleExpectation sends the reschedule expectation request.
 // Parameters:
 // pathParameter - NRN resource path for a beacon resource. The "name" position may be redundent for the
 // feature (ftr) and feature instance (fin) types. The "system" position is the dot-delimited hierarchy of
 // system names above this resource, if the resource is contained within a system.
-func (client BaseClient) PostAPIExpectationsPathEventsFulfilled(ctx context.Context, pathParameter string, body *FulfilledExpectation) (result String, err error) {
+func (client BaseClient) RescheduleExpectation(ctx context.Context, pathParameter string, body *RescheduledExpectation) (result String, err error) {
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: pathParameter,
-			Constraints: []validation.Constraint{{Target: "pathParameter", Name: validation.Pattern, Rule: `^nrn:beacon:(?<tenant>[^:]+:(?<type>sys|exp|ftr|fin):(?<feature>[^:]+)?:(?<version>[^:]+)?:(?<instance>[^:]*)?:(?<system>[^:]*)?:(?<name>[^:]*)?)$`, Chain: nil}}}}); err != nil {
-		return result, validation.NewError("beacon.BaseClient", "PostAPIExpectationsPathEventsFulfilled", err.Error())
+			Constraints: []validation.Constraint{{Target: "pathParameter", Name: validation.Pattern, Rule: `.*`, Chain: nil}}}}); err != nil {
+		return result, validation.NewError("beacon.BaseClient", "RescheduleExpectation", err.Error())
 	}
 
-	req, err := client.PostAPIExpectationsPathEventsFulfilledPreparer(ctx, pathParameter, body)
+	req, err := client.RescheduleExpectationPreparer(ctx, pathParameter, body)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "PostAPIExpectationsPathEventsFulfilled", nil, "Failure preparing request")
+		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "RescheduleExpectation", nil, "Failure preparing request")
 		return
 	}
 
-	resp, err := client.PostAPIExpectationsPathEventsFulfilledSender(req)
+	resp, err := client.RescheduleExpectationSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "PostAPIExpectationsPathEventsFulfilled", resp, "Failure sending request")
+		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "RescheduleExpectation", resp, "Failure sending request")
 		return
 	}
 
-	result, err = client.PostAPIExpectationsPathEventsFulfilledResponder(resp)
+	result, err = client.RescheduleExpectationResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "PostAPIExpectationsPathEventsFulfilled", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "RescheduleExpectation", resp, "Failure responding to request")
 	}
 
 	return
 }
 
-// PostAPIExpectationsPathEventsFulfilledPreparer prepares the PostAPIExpectationsPathEventsFulfilled request.
-func (client BaseClient) PostAPIExpectationsPathEventsFulfilledPreparer(ctx context.Context, pathParameter string, body *FulfilledExpectation) (*http.Request, error) {
-	pathParameters := map[string]interface{}{
-		"path": autorest.Encode("path", pathParameter),
-	}
-
-	preparer := autorest.CreatePreparer(
-		autorest.AsContentType("application/json; charset=utf-8"),
-		autorest.AsPost(),
-		autorest.WithBaseURL(client.BaseURI),
-		autorest.WithPathParameters("/api/expectations/{path}/events/fulfilled", pathParameters))
-	if body != nil {
-		preparer = autorest.DecoratePreparer(preparer,
-			autorest.WithJSON(body))
-	}
-	return preparer.Prepare((&http.Request{}).WithContext(ctx))
-}
-
-// PostAPIExpectationsPathEventsFulfilledSender sends the PostAPIExpectationsPathEventsFulfilled request. The method will close the
-// http.Response Body if it receives an error.
-func (client BaseClient) PostAPIExpectationsPathEventsFulfilledSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-}
-
-// PostAPIExpectationsPathEventsFulfilledResponder handles the response to the PostAPIExpectationsPathEventsFulfilled request. The method always
-// closes the http.Response Body.
-func (client BaseClient) PostAPIExpectationsPathEventsFulfilledResponder(resp *http.Response) (result String, err error) {
-	err = autorest.Respond(
-		resp,
-		client.ByInspecting(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK),
-		autorest.ByUnmarshallingJSON(&result.Value),
-		autorest.ByClosing())
-	result.Response = autorest.Response{Response: resp}
-	return
-}
-
-// PostAPIExpectationsPathEventsRescheduled sends the post api expectations path events rescheduled request.
-// Parameters:
-// pathParameter - NRN resource path for a beacon resource. The "name" position may be redundent for the
-// feature (ftr) and feature instance (fin) types. The "system" position is the dot-delimited hierarchy of
-// system names above this resource, if the resource is contained within a system.
-func (client BaseClient) PostAPIExpectationsPathEventsRescheduled(ctx context.Context, pathParameter string, body *RescheduledExpectation) (result String, err error) {
-	if err := validation.Validate([]validation.Validation{
-		{TargetValue: pathParameter,
-			Constraints: []validation.Constraint{{Target: "pathParameter", Name: validation.Pattern, Rule: `^nrn:beacon:(?<tenant>[^:]+:(?<type>sys|exp|ftr|fin):(?<feature>[^:]+)?:(?<version>[^:]+)?:(?<instance>[^:]*)?:(?<system>[^:]*)?:(?<name>[^:]*)?)$`, Chain: nil}}}}); err != nil {
-		return result, validation.NewError("beacon.BaseClient", "PostAPIExpectationsPathEventsRescheduled", err.Error())
-	}
-
-	req, err := client.PostAPIExpectationsPathEventsRescheduledPreparer(ctx, pathParameter, body)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "PostAPIExpectationsPathEventsRescheduled", nil, "Failure preparing request")
-		return
-	}
-
-	resp, err := client.PostAPIExpectationsPathEventsRescheduledSender(req)
-	if err != nil {
-		result.Response = autorest.Response{Response: resp}
-		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "PostAPIExpectationsPathEventsRescheduled", resp, "Failure sending request")
-		return
-	}
-
-	result, err = client.PostAPIExpectationsPathEventsRescheduledResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "PostAPIExpectationsPathEventsRescheduled", resp, "Failure responding to request")
-	}
-
-	return
-}
-
-// PostAPIExpectationsPathEventsRescheduledPreparer prepares the PostAPIExpectationsPathEventsRescheduled request.
-func (client BaseClient) PostAPIExpectationsPathEventsRescheduledPreparer(ctx context.Context, pathParameter string, body *RescheduledExpectation) (*http.Request, error) {
+// RescheduleExpectationPreparer prepares the RescheduleExpectation request.
+func (client BaseClient) RescheduleExpectationPreparer(ctx context.Context, pathParameter string, body *RescheduledExpectation) (*http.Request, error) {
 	pathParameters := map[string]interface{}{
 		"path": autorest.Encode("path", pathParameter),
 	}
@@ -1456,86 +1523,20 @@ func (client BaseClient) PostAPIExpectationsPathEventsRescheduledPreparer(ctx co
 	return preparer.Prepare((&http.Request{}).WithContext(ctx))
 }
 
-// PostAPIExpectationsPathEventsRescheduledSender sends the PostAPIExpectationsPathEventsRescheduled request. The method will close the
+// RescheduleExpectationSender sends the RescheduleExpectation request. The method will close the
 // http.Response Body if it receives an error.
-func (client BaseClient) PostAPIExpectationsPathEventsRescheduledSender(req *http.Request) (*http.Response, error) {
+func (client BaseClient) RescheduleExpectationSender(req *http.Request) (*http.Response, error) {
 	return autorest.SendWithSender(client, req,
 		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
 }
 
-// PostAPIExpectationsPathEventsRescheduledResponder handles the response to the PostAPIExpectationsPathEventsRescheduled request. The method always
+// RescheduleExpectationResponder handles the response to the RescheduleExpectation request. The method always
 // closes the http.Response Body.
-func (client BaseClient) PostAPIExpectationsPathEventsRescheduledResponder(resp *http.Response) (result String, err error) {
+func (client BaseClient) RescheduleExpectationResponder(resp *http.Response) (result String, err error) {
 	err = autorest.Respond(
 		resp,
 		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK),
-		autorest.ByUnmarshallingJSON(&result.Value),
-		autorest.ByClosing())
-	result.Response = autorest.Response{Response: resp}
-	return
-}
-
-// PostAPISystems sends the post api systems request.
-func (client BaseClient) PostAPISystems(ctx context.Context, body *SystemInput) (result SetObject, err error) {
-	if err := validation.Validate([]validation.Validation{
-		{TargetValue: body,
-			Constraints: []validation.Constraint{{Target: "body", Name: validation.Null, Rule: false,
-				Chain: []validation.Constraint{{Target: "body.Name", Name: validation.Null, Rule: true, Chain: nil},
-					{Target: "body.Tenant", Name: validation.Null, Rule: true, Chain: nil},
-				}}}}}); err != nil {
-		return result, validation.NewError("beacon.BaseClient", "PostAPISystems", err.Error())
-	}
-
-	req, err := client.PostAPISystemsPreparer(ctx, body)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "PostAPISystems", nil, "Failure preparing request")
-		return
-	}
-
-	resp, err := client.PostAPISystemsSender(req)
-	if err != nil {
-		result.Response = autorest.Response{Response: resp}
-		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "PostAPISystems", resp, "Failure sending request")
-		return
-	}
-
-	result, err = client.PostAPISystemsResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "beacon.BaseClient", "PostAPISystems", resp, "Failure responding to request")
-	}
-
-	return
-}
-
-// PostAPISystemsPreparer prepares the PostAPISystems request.
-func (client BaseClient) PostAPISystemsPreparer(ctx context.Context, body *SystemInput) (*http.Request, error) {
-	preparer := autorest.CreatePreparer(
-		autorest.AsContentType("application/json; charset=utf-8"),
-		autorest.AsPost(),
-		autorest.WithBaseURL(client.BaseURI),
-		autorest.WithPath("/api/systems"))
-	if body != nil {
-		preparer = autorest.DecoratePreparer(preparer,
-			autorest.WithJSON(body))
-	}
-	return preparer.Prepare((&http.Request{}).WithContext(ctx))
-}
-
-// PostAPISystemsSender sends the PostAPISystems request. The method will close the
-// http.Response Body if it receives an error.
-func (client BaseClient) PostAPISystemsSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-}
-
-// PostAPISystemsResponder handles the response to the PostAPISystems request. The method always
-// closes the http.Response Body.
-func (client BaseClient) PostAPISystemsResponder(resp *http.Response) (result SetObject, err error) {
-	err = autorest.Respond(
-		resp,
-		client.ByInspecting(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusBadRequest),
 		autorest.ByUnmarshallingJSON(&result.Value),
 		autorest.ByClosing())
 	result.Response = autorest.Response{Response: resp}

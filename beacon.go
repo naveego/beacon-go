@@ -67,14 +67,14 @@ func (s *FeatureInstanceMonitor) Refresh() (bool, error) {
 	fileName := "featureInstance.json"
 	filePath := filepath.Join(tmpDir, fileName)
 	client := &getter.Client{
-		Src: s.Key,
+		Src: s.ConfigURL,
 		Pwd: tmpDir,
 		Dst: fileName,
 	}
 
 	err := client.Get()
 	if err != nil {
-		return false, fmt.Errorf("error getting config from %q: %s", s.Key, err)
+		return false, fmt.Errorf("error getting config from %q: %s", s.ConfigURL, err)
 	}
 
 	latestBytes, err := ioutil.ReadFile(filePath)

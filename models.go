@@ -101,33 +101,44 @@ func PossibleState1Values() []State1 {
 type Type string
 
 const (
-	// TypeHeartbeat ...
-	TypeHeartbeat Type = "heartbeat"
-	// TypeHTTP ...
-	TypeHTTP Type = "http"
-	// TypeQuery ...
-	TypeQuery Type = "query"
+	// Cron ...
+	Cron Type = "cron"
+	// Deadline ...
+	Deadline Type = "deadline"
+	// Immediate ...
+	Immediate Type = "immediate"
+	// TTL ...
+	TTL Type = "ttl"
 )
 
 // PossibleTypeValues returns an array of possible values for the Type const type.
 func PossibleTypeValues() []Type {
-	return []Type{TypeHeartbeat, TypeHTTP, TypeQuery}
+	return []Type{Cron, Deadline, Immediate, TTL}
 }
 
-// Error ...
-type Error struct {
-	StatusCode *float64 `json:"statusCode,omitempty"`
-	Error      *string  `json:"error,omitempty"`
-	Message    *string  `json:"message,omitempty"`
+// Type1 enumerates the values for type 1.
+type Type1 string
+
+const (
+	// Type1Heartbeat ...
+	Type1Heartbeat Type1 = "heartbeat"
+	// Type1HTTP ...
+	Type1HTTP Type1 = "http"
+	// Type1Query ...
+	Type1Query Type1 = "query"
+)
+
+// PossibleType1Values returns an array of possible values for the Type1 const type.
+func PossibleType1Values() []Type1 {
+	return []Type1{Type1Heartbeat, Type1HTTP, Type1Query}
 }
 
 // Event ...
 type Event struct {
-	ID            *string `json:"id,omitempty"`
-	CorrelationID *string `json:"correlationID,omitempty"`
-	CausedBy      *string `json:"causedBy,omitempty"`
-	Category      *string `json:"category,omitempty"`
-	Type          *string `json:"type,omitempty"`
+	ID       *string `json:"id,omitempty"`
+	CausedBy *string `json:"causedBy,omitempty"`
+	Category *string `json:"category,omitempty"`
+	Type     *string `json:"type,omitempty"`
 	// Kind - Possible values include: 'Notification', 'Request'
 	Kind   Kind    `json:"kind,omitempty"`
 	Tenant *string `json:"tenant,omitempty"`
@@ -147,7 +158,7 @@ type Expectation struct {
 	autorest.Response `json:"-"`
 	// BrokenAt - The timestamp at which this expectation transitioned from healthy to unhealthy.
 	BrokenAt   *date.Time `json:"brokenAt,omitempty"`
-	DeadlineAt *float64   `json:"deadlineAt,omitempty"`
+	DeadlineAt *date.Time `json:"deadlineAt,omitempty"`
 	IsFailed   *bool      `json:"isFailed,omitempty"`
 	// State - Possible values include: 'Suspended', 'Running', 'Retired'
 	State State   `json:"state,omitempty"`
@@ -168,21 +179,44 @@ type Expectation struct {
 	// Tenant - The tenant the expectation belongs to.
 	Tenant *string `json:"tenant,omitempty"`
 	// System - The system the expectation belongs to.
-	System    *string  `json:"system,omitempty"`
-	Tolerance *float64 `json:"tolerance,omitempty"`
-	// Schedule - The of schedule to set for the expectation. For 'ttl', it should be the number of milliseconds; for 'cron' it should be a cron spec.
-	Schedule *string `json:"schedule,omitempty"`
+	System    *string   `json:"system,omitempty"`
+	Tolerance *float64  `json:"tolerance,omitempty"`
+	Schedule  *Schedule `json:"schedule,omitempty"`
 	// Behavior - Possible values include: 'Heartbeat', 'Transient', 'Recurrent', 'UntilFulfilled', 'Workflow'
 	Behavior      Behavior   `json:"behavior,omitempty"`
 	ScheduledFrom *date.Time `json:"scheduledFrom,omitempty"`
 	// MaxMissedDeadlineCount - The number of times this expectation can miss a deadline before it is considered failed
-	MaxMissedDeadlineCount *float64  `json:"maxMissedDeadlineCount,omitempty"`
-	Tags                   *[]string `json:"tags,omitempty"`
-	// Data - Arbitrary data to associate with the expectation.
-	Data             *string     `json:"data,omitempty"`
-	OnFailedEvent    interface{} `json:"onFailedEvent,omitempty"`
-	OnFulfilledEvent interface{} `json:"onFulfilledEvent,omitempty"`
-	OnDeadlineEvent  interface{} `json:"onDeadlineEvent,omitempty"`
+	MaxMissedDeadlineCount *float64    `json:"maxMissedDeadlineCount,omitempty"`
+	Tags                   *[]string   `json:"tags,omitempty"`
+	Data                   interface{} `json:"data,omitempty"`
+	OnFailedEvent          interface{} `json:"onFailedEvent,omitempty"`
+	OnFulfilledEvent       interface{} `json:"onFulfilledEvent,omitempty"`
+	OnDeadlineEvent        interface{} `json:"onDeadlineEvent,omitempty"`
+}
+
+// ExpectationInputs ...
+type ExpectationInputs struct {
+	Name *string `json:"name,omitempty"`
+	// DisplayName - The name of the expectation.
+	DisplayName *string `json:"displayName,omitempty"`
+	// Description - An optional description to help users.
+	Description *string `json:"description,omitempty"`
+	// Tenant - The tenant the expectation belongs to.
+	Tenant *string `json:"tenant,omitempty"`
+	// System - The system the expectation belongs to.
+	System    *string   `json:"system,omitempty"`
+	Tolerance *float64  `json:"tolerance,omitempty"`
+	Schedule  *Schedule `json:"schedule,omitempty"`
+	// Behavior - Possible values include: 'Behavior1Heartbeat', 'Behavior1Transient', 'Behavior1Recurrent', 'Behavior1UntilFulfilled', 'Behavior1Workflow'
+	Behavior      Behavior1  `json:"behavior,omitempty"`
+	ScheduledFrom *date.Time `json:"scheduledFrom,omitempty"`
+	// MaxMissedDeadlineCount - The number of times this expectation can miss a deadline before it is considered failed
+	MaxMissedDeadlineCount *float64    `json:"maxMissedDeadlineCount,omitempty"`
+	Tags                   *[]string   `json:"tags,omitempty"`
+	Data                   interface{} `json:"data,omitempty"`
+	OnFailedEvent          interface{} `json:"onFailedEvent,omitempty"`
+	OnFulfilledEvent       interface{} `json:"onFulfilledEvent,omitempty"`
+	OnDeadlineEvent        interface{} `json:"onDeadlineEvent,omitempty"`
 }
 
 // FailedExpectation ...
@@ -195,8 +229,10 @@ type Feature struct {
 	autorest.Response `json:"-"`
 	Name              *string `json:"name,omitempty"`
 	// Version - A SemVer version number.
-	Version *string     `json:"version,omitempty"`
-	Labels  interface{} `json:"labels,omitempty"`
+	Version *string `json:"version,omitempty"`
+	// Path - NRN resource path for a beacon resource. The "name" position may be redundent for the feature (ftr) and feature instance (fin) types. The "system" position is the dot-delimited hierarchy of system names above this resource, if the resource is contained within a system.
+	Path   *string     `json:"path,omitempty"`
+	Labels interface{} `json:"labels,omitempty"`
 	// IsPerTenant - The tenant the config belongs to, if any.
 	IsPerTenant          *bool       `json:"isPerTenant,omitempty"`
 	Contract             interface{} `json:"contract,omitempty"`
@@ -265,8 +301,8 @@ type FulfilledExpectation struct {
 // Healthcheck ...
 type Healthcheck struct {
 	Name *string `json:"name,omitempty"`
-	// Type - Possible values include: 'TypeHeartbeat', 'TypeHTTP', 'TypeQuery'
-	Type       Type     `json:"type,omitempty"`
+	// Type - Possible values include: 'Type1Heartbeat', 'Type1HTTP', 'Type1Query'
+	Type       Type1    `json:"type,omitempty"`
 	IntervalMS *float64 `json:"intervalMS,omitempty"`
 }
 
@@ -315,42 +351,23 @@ type ListSystem struct {
 	Value             *[]System `json:"value,omitempty"`
 }
 
-// NewExpectation ...
-type NewExpectation struct {
-	Name *string `json:"name,omitempty"`
-	// DisplayName - The name of the expectation.
-	DisplayName *string `json:"displayName,omitempty"`
-	// Description - An optional description to help users.
-	Description *string `json:"description,omitempty"`
-	// Tenant - The tenant the expectation belongs to.
-	Tenant *string `json:"tenant,omitempty"`
-	// System - The system the expectation belongs to.
-	System    *string  `json:"system,omitempty"`
-	Tolerance *float64 `json:"tolerance,omitempty"`
-	// Schedule - The of schedule to set for the expectation. For 'ttl', it should be the number of milliseconds; for 'cron' it should be a cron spec.
-	Schedule *string `json:"schedule,omitempty"`
-	// Behavior - Possible values include: 'Behavior1Heartbeat', 'Behavior1Transient', 'Behavior1Recurrent', 'Behavior1UntilFulfilled', 'Behavior1Workflow'
-	Behavior      Behavior1  `json:"behavior,omitempty"`
-	ScheduledFrom *date.Time `json:"scheduledFrom,omitempty"`
-	// MaxMissedDeadlineCount - The number of times this expectation can miss a deadline before it is considered failed
-	MaxMissedDeadlineCount *float64  `json:"maxMissedDeadlineCount,omitempty"`
-	Tags                   *[]string `json:"tags,omitempty"`
-	// Data - Arbitrary data to associate with the expectation.
-	Data             *string     `json:"data,omitempty"`
-	OnFailedEvent    interface{} `json:"onFailedEvent,omitempty"`
-	OnFulfilledEvent interface{} `json:"onFulfilledEvent,omitempty"`
-	OnDeadlineEvent  interface{} `json:"onDeadlineEvent,omitempty"`
-	// TTLSchedule - Optional way to provide a millisecond TTL schedule for clients that don't support x-alternatives.
-	TTLSchedule *float64 `json:"ttlSchedule,omitempty"`
-	// CronSchedule - Optional way to provide a cron schedule for clients that don't support x-alternatives.
-	CronSchedule *string `json:"cronSchedule,omitempty"`
-}
-
 // RescheduledExpectation ...
 type RescheduledExpectation struct {
 	Message *string `json:"message,omitempty"`
 	// RescheduleTo - If kind=rescheduled, this can be the new start time for the expectation.
 	RescheduleTo *date.Time `json:"rescheduleTo,omitempty"`
+}
+
+// Schedule ...
+type Schedule struct {
+	// Type - The type of schedule. Possible values include: 'Cron', 'TTL', 'Immediate', 'Deadline'
+	Type Type `json:"type,omitempty"`
+	// Cron - The cron schedule, required if type==cron
+	Cron *string `json:"cron,omitempty"`
+	// TTL - The TTL in milliseconds, required if type==ttl
+	TTL *float64 `json:"ttl,omitempty"`
+	// Deadline - The deadline, required if type=deadline
+	Deadline *date.Time `json:"deadline,omitempty"`
 }
 
 // SetObject ...
@@ -391,8 +408,8 @@ type System struct {
 	ActiveConfig *string `json:"activeConfig,omitempty"`
 }
 
-// SystemInput ...
-type SystemInput struct {
+// SystemInputs ...
+type SystemInputs struct {
 	Name *string `json:"name,omitempty"`
 	// Tenant - The tenant the owner belongs to.
 	Tenant *string `json:"tenant,omitempty"`
