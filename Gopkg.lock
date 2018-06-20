@@ -159,6 +159,8 @@
   packages = [
     ".",
     "format",
+    "gstruct",
+    "gstruct/errors",
     "internal/assertion",
     "internal/asyncassertion",
     "internal/oraclematcher",
@@ -233,6 +235,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "0f53fb91aa42797951b38fcb83f59a58089c42d0a13aa16284104439eb5b0283"
+  inputs-digest = "2db02ded3067e16f88cc24d87ed4d148befb97350c27e00a42bf85e6fc9f6379"
   solver-name = "gps-cdcl"
   solver-version = 1
