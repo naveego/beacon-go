@@ -9,7 +9,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/types"
-	"github.com/sirupsen/logrus"
 )
 
 var _ = Describe("System", func() {
@@ -34,7 +33,7 @@ var _ = Describe("System", func() {
 		featureInstance beacon.FeatureInstance
 		client          beacon.BaseClient
 		ctx             context.Context
-		log             = logrus.NewEntry(logrus.StandardLogger())
+		log             = beacon.ConsoleLog{}
 	)
 
 	BeforeSuite(func() {

@@ -4,10 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/Azure/go-autorest/autorest/date"
-
 	"github.com/Azure/go-autorest/autorest/to"
-	"github.com/sirupsen/logrus"
 )
 
 func timeoutCtx() context.Context {
@@ -64,7 +61,7 @@ type RunningExpectation interface {
 
 type runningSystem struct {
 	nrn    NRN
-	log    *logrus.Entry
+	log    Log
 	client *BaseClient
 	system *System
 }
@@ -73,7 +70,7 @@ func (d *runningSystem) System() *System {
 	return d.system
 }
 func (d *runningSystem) Child(options SystemOptions) RunningSystem {
-	d.log.WithField("options", options).Debug("Creating child system.")
+	d.log.Debug(d.nrn, "Creating child system.", map[string]interface{}{"options": options})
 	nrn := d.nrn.ChildSystem(options.Name)
 	inputs := &SystemInputs{
 		Name:                to.StringPtr(options.Name),
@@ -90,27 +87,26 @@ func (d *runningSystem) Child(options SystemOptions) RunningSystem {
 	system, err := d.client.CreateSystem(timeoutCtx(), inputs)
 
 	if err != nil {
-		d.log.WithError(err).Warn("Could not start system. Dummy system will be used instead.")
+		d.log.Warn(d.nrn, "Could not start system. Dummy system will be used instead.", map[string]interface{}{"error": err.Error()})
+
 		return &dummySystem{
 			nrn: nrn,
-			log: d.log.WithField("sys", nrn.String()),
+			log: d.log,
 		}
 	}
 
-	log := d.log.WithField("sys", system.Path)
-	log.Info("Started system.")
+	d.log.Debug(nrn, "Started system.")
 
 	return &runningSystem{
 		nrn:    nrn,
 		system: &system,
 		client: d.client,
-		log:    log,
+		log:    d.log,
 	}
 }
 func (d *runningSystem) Expectation(options ExpectationOptions) RunningExpectation {
-	d.log.WithField("options", options).Debug("Creating child expectation.")
+	d.log.Debug(d.nrn, "Creating expectation.", map[string]interface{}{"options": options})
 	nrn := d.nrn.ChildExpectation(options.Name)
-	log := d.log.WithField("exp", nrn.String())
 
 	inputs := &ExpectationInputs{
 		Name:        to.StringPtr(options.Name),
@@ -131,10 +127,10 @@ func (d *runningSystem) Expectation(options ExpectationOptions) RunningExpectati
 
 	expectation, err := d.client.CreateExpectation(timeoutCtx(), inputs)
 	if err != nil {
-		d.log.WithError(err).Warn("Could not create expectation. Dummy expectation will be used instead.")
+		d.log.Warn(d.nrn, "Could not start system. Dummy expectation will be used instead.", map[string]interface{}{"error": err.Error()})
 		return &dummyExpectation{
 			nrn: nrn,
-			log: log,
+			log: d.log,
 		}
 	}
 
@@ -142,74 +138,23 @@ func (d *runningSystem) Expectation(options ExpectationOptions) RunningExpectati
 		nrn:         nrn,
 		expectation: &expectation,
 		client:      d.client,
-		log:         log,
+		log:         d.log,
 	}
 }
 
 func (d *runningSystem) Shutdown() {
 	_, err := d.client.DeleteSystem(timeoutCtx(), to.String(d.system.Path))
 	if err != nil {
-		d.log.WithError(err).Warn("Shutdown failed.")
+		d.log.Warn(d.nrn, "Shutdown failed.", map[string]interface{}{"error": err.Error()})
 	}
-	d.log.Debug("Shutdown.")
+	d.log.Debug(d.nrn, "Shutdown.")
 }
 
-type runningExpectation struct {
-	nrn         NRN
-	log         *logrus.Entry
-	client      *BaseClient
-	expectation *Expectation
-}
-
-func (d *runningExpectation) Expectation() *Expectation {
-	return d.expectation
-}
-
-func (d *runningExpectation) Fulfil(message string) {
-	_, err := d.client.FulfilExpectation(timeoutCtx(), to.String(d.expectation.Path), &FulfilledExpectation{
-		Message: to.StringPtr(message),
-	})
-	if err != nil {
-		d.log.WithField("message", message).WithError(err).Warn("Fulfillment failed.")
-	}
-	d.log.WithField("message", message).Debug("Fulfilled.")
-}
-
-func (d *runningExpectation) Fail(message string) {
-	_, err := d.client.FailExpectation(timeoutCtx(), to.String(d.expectation.Path), &FailedExpectation{
-		Message: to.StringPtr(message),
-	})
-	if err != nil {
-		d.log.WithField("message", message).WithError(err).Warn("Failure failed.")
-	}
-	d.log.WithField("message", message).Debug("Failed.")
-}
-
-func (d *runningExpectation) Reschedule(message string, rescheduleTo time.Time) {
-	log := d.log.WithField("message", message).WithField("to", rescheduleTo)
-	_, err := d.client.RescheduleExpectation(timeoutCtx(), to.String(d.expectation.Path), &RescheduledExpectation{
-		Message:      to.StringPtr(message),
-		RescheduleTo: &date.Time{rescheduleTo},
-	})
-	if err != nil {
-		log.WithError(err).Warn("Reschedule failed.")
-	}
-	log.Debug("Rescheduled.")
-}
-
-func (d *runningExpectation) Retire() {
-	_, err := d.client.DeleteExpectation(timeoutCtx(), to.String(d.expectation.Path))
-	if err != nil {
-		d.log.WithError(err).Warn("Retirement failed.")
-	}
-	d.log.Debug("Retired.")
-}
-
-func (c *BaseClient) StartSystem(options SystemOptions, log *logrus.Entry) RunningSystem {
+func (c *BaseClient) StartSystem(options SystemOptions, log Log) RunningSystem {
 
 	featureInstanceNRN, err := ParseNRN(options.FeatureInstancePath)
 	if err != nil {
-		log.WithField("options", options).Warn("invalid FeatureInstancePath: %s", err)
+		log.Warn(featureInstanceNRN, "Invalid feature instance NRN.", map[string]interface{}{"error": err.Error()})
 		return &dummySystem{
 			nrn: featureInstanceNRN,
 			log: log,

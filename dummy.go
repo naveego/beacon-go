@@ -2,50 +2,48 @@ package beacon
 
 import (
 	"time"
-
-	"github.com/sirupsen/logrus"
 )
 
 type dummySystem struct {
 	nrn NRN
-	log *logrus.Entry
+	log Log
 }
 type dummyExpectation struct {
 	nrn NRN
-	log *logrus.Entry
+	log Log
 }
 
 func (d *dummySystem) Child(options SystemOptions) RunningSystem {
-	d.log.WithField("options", options).Debug("Creating child system.")
+	d.log.Debug(d.nrn, "Creating child system.", map[string]interface{}{"options": options})
 	nrn := d.nrn.ChildSystem(options.Name)
 	return &dummySystem{
 		nrn: nrn,
-		log: d.log.WithField("sys", nrn.String()),
+		log: d.log,
 	}
 }
 func (d *dummySystem) Expectation(options ExpectationOptions) RunningExpectation {
-	d.log.WithField("options", options).Debug("Creating child expectation.")
+	d.log.Debug(d.nrn, "Creating child expectation.", map[string]interface{}{"options": options})
 	nrn := d.nrn.ChildExpectation(options.Name)
 	return &dummyExpectation{
 		nrn: nrn,
-		log: d.log.WithField("exp", nrn.String()),
+		log: d.log,
 	}
 }
 
 func (d *dummySystem) Shutdown() {
-	d.log.Debug("Shutdown.")
+	d.log.Debug(d.nrn, "Shutdown.")
 }
 func (d *dummyExpectation) Fulfil(message string) {
-	d.log.WithField("message", message).Debug("Fulfilled")
+	d.log.Debug(d.nrn, "Fulfilled")
 }
 func (d *dummyExpectation) Fail(message string) {
-	d.log.WithField("message", message).Debug("Failed")
+	d.log.Debug(d.nrn, "Failed")
 }
 func (d *dummyExpectation) Retire() {
-	d.log.Debug("Retired")
+	d.log.Debug(d.nrn, "Retired")
 }
 
 func (d *dummyExpectation) Reschedule(message string, rescheduleTo time.Time) {
-	log := d.log.WithField("message", message).WithField("to", rescheduleTo)
-	log.Debug("Rescheduled.")
+	d.log.Debug(d.nrn, "Rescheduled.", map[string]interface{}{"message": message, "rescheduleTo": rescheduleTo})
+
 }
