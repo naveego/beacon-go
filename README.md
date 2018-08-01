@@ -12,7 +12,7 @@ If you don't have autorest, run `npm install -g autorest` first.
 input-file: http://localhost:9005/api/swagger.json # full Unicode support
 
 go:
-  output-folder: .  
+  output-folder: pkg/beacon 
   add-credentials: true
   namespace: beacon
 

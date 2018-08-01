@@ -1,4 +1,4 @@
-package beacon_test
+package beacon
 
 import (
 	. "github.com/onsi/ginkgo"
